@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Tabla Textos_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: bd9f69d9fd92bfc4abc80b054070fe65, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 28922585088
+    m_Localized: MUSIC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1107395584000
+    m_Localized: SOUND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1112692989952
+    m_Localized: VIBRATION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1173590089728
+    m_Localized: IDIOMAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1110172213248
+    m_Localized: RULES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 556754771968
+    m_Localized: CLOSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2241531191296
+    m_Localized: "<align=center><size=130%><color=#FFD700><b>~ RULES ~</b></color></size></align>\r\n\r\n<color=#FFD700><b>GAME
+      OBJECTIVE</b></color>\r\nThe seer who ends the round with the <color=#50C878>lowest
+      score</color> on their table, wins.\r\n\r\n<color=#FFD700><b>MYSTICAL POWERS</b></color>\r\nBy
+      discarding these cards on your turn, you will unleash their magic:\r\n\r\n<color=#50C878><b>\u2022
+      Cards 4 and 5:</b></color> Inner vision. Allows you to secretly look at one
+      of your own hidden cards.\r\n<color=#50C878><b>\u2022 Cards 6 and 7:</b></color>
+      Enemy vision. Allows you to spy on one of your opponent's hidden cards.\r\n<color=#50C878><b>\u2022
+      The 10 (Jack):</b></color> The great exchange. Swap the position of one of
+      your cards with one from your opponent.\r\n\r\n<color=#FFD700><b>LUCKY CARDS</b></color>\r\n<color=#50C878><b>\u2022
+      The 12 (King) of Coins and Cups:</b></color> These sacred cards are worth exactly
+      0 points!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

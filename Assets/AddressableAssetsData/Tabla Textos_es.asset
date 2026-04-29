@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Tabla Textos_es
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: es
+  m_SharedData: {fileID: 11400000, guid: bd9f69d9fd92bfc4abc80b054070fe65, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 28922585088
+    m_Localized: "M\xDASICA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 556754771968
+    m_Localized: CERRAR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1107395584000
+    m_Localized: SONIDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1110172213248
+    m_Localized: REGLAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1112692989952
+    m_Localized: "VIBRACI\xD3N"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1173590089728
+    m_Localized: IDIOMAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2241531191296
+    m_Localized: "<align=center><size=130%><color=#FFD700><b>~ REGLAS ~</b></color></size></align>\r\n\r\n<color=#FFD700><b>OBJETIVO
+      DEL JUEGO</b></color>\r\nEl adivino que termine la ronda con la <color=#50C878>menor
+      puntuaci\xF3n</color> en su mesa, gana.\r\n\r\n<color=#FFD700><b>LOS PODERES
+      M\xCDSTICOS</b></color>\r\nAl descartar estas cartas en tu turno, desatar\xE1s
+      su magia:\r\n\r\n<color=#50C878><b>\u2022 Cartas 4 y 5:</b></color> Visi\xF3n
+      interior. Te permite mirar en secreto una de tus propias cartas ocultas.\r\n<color=#50C878><b>\u2022
+      Cartas 6 y 7:</b></color> Visi\xF3n del enemigo. Te permite espiar una de las
+      cartas ocultas de tu rival.\r\n<color=#50C878><b>\u2022 El 10 (La Sota):</b></color>
+      El gran intercambio. Cambia la posici\xF3n de una de tus cartas con una del
+      rival.\r\n\r\n<color=#FFD700><b>CARTAS DE LA SUERTE</b></color>\r\n<color=#50C878><b>\u2022
+      El 12 (Rey) de Oros y Copas:</b></color> \xA1Estas cartas sagradas valen exactamente
+      0 puntos!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

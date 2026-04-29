@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be51871efa6c3e4eae1703925c8f5ac, type: 3}
+  m_Name: Tabla Textos
+  m_EditorClassIdentifier: 
+  m_SharedTableData: {fileID: 11400000, guid: bd9f69d9fd92bfc4abc80b054070fe65, type: 2}
+  m_Tables:
+  - {fileID: 11400000, guid: 2f0c4744114508843a6a45081e357cd4, type: 2}
+  - {fileID: 11400000, guid: d244056a3ccbd80468f87be57cc3c941, type: 2}
+  - {fileID: 11400000, guid: b7cbadaa7c1601d419fc744872323571, type: 2}
+  - {fileID: 11400000, guid: 3e0c03edc8d180544a8d5f6d458947af, type: 2}
+  - {fileID: 11400000, guid: 9b3d4a4d33770fd4b8e188e8f6ad6104, type: 2}
+  m_Extensions: []
+  m_Group: String Table
+  references:
+    version: 2
+    RefIds: []

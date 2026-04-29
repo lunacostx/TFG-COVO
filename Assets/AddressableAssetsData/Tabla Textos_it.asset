@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Tabla Textos_it
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: it
+  m_SharedData: {fileID: 11400000, guid: bd9f69d9fd92bfc4abc80b054070fe65, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 28922585088
+    m_Localized: MUSICA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1107395584000
+    m_Localized: SUONO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1112692989952
+    m_Localized: VIBRAZIONE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1173590089728
+    m_Localized: LINGUA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1110172213248
+    m_Localized: REGOLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 556754771968
+    m_Localized: CHIUDI
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2241531191296
+    m_Localized: "<align=center><size=130%><color=#FFD700><b>~ REGOLE ~</b></color></size></align>\r\n\r\n<color=#FFD700><b>OBIETTIVO
+      DEL GIOCO</b></color>\r\nL'indovino che termina il round con il <color=#50C878>punteggio
+      pi\xF9 basso</color> sul suo tavolo, vince.\r\n\r\n<color=#FFD700><b>POTERI
+      MISTICI</b></color>\r\nScartando queste carte nel tuo turno, scatenerai la
+      loro magia:\r\n\r\n<color=#50C878><b>\u2022 Carte 4 e 5:</b></color> Visione
+      interiore. Ti permette di guardare in segreto una delle tue carte coperte.\r\n<color=#50C878><b>\u2022
+      Carte 6 e 7:</b></color> Visione del nemico. Ti permette di spiare una delle
+      carte coperte del tuo rivale.\r\n<color=#50C878><b>\u2022 Il 10 (Fante):</b></color>
+      Il grande scambio. Scambia la posizione di una delle tue carte con una del
+      rivale.\r\n\r\n<color=#FFD700><b>CARTE DELLA FORTUNA</b></color>\r\n<color=#50C878><b>\u2022
+      Il 12 (Re) di Denari e Coppe:</b></color> Queste carte sacre valgono esattamente
+      0 punti!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []
