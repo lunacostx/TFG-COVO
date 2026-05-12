@@ -15,20 +15,22 @@ public class ControladorMenu : MonoBehaviour
     [SerializeField] private GameObject botonAbrirAjustes;
 
     [Header("Contenedores de Ajustes")]
-    [SerializeField] private GameObject contenidoAjustes; // Agrupa aquí sliders y etiquetas
+    [SerializeField] private GameObject contenidoAjustes; 
 
     [Header("Paneles Emergentes")]
     public GameObject panelAjustes;
     public GameObject panelReglas;
 
-    [Header("Controles de Sonido")]
+    [Header("Controles de Sonido y Extras")]
     public Slider sliderMusica;
     public Slider sliderSonido;
+    public Toggle toggleVibracion; // <--- NUEVA VARIABLE
 
     private void Start()
     {
         ConfigurarPerfil();
         ConfigurarSonidoInicial();
+        ConfigurarVibracionInicial(); // <--- NUEVA LLAMADA
         
         if (panelAjustes != null) panelAjustes.SetActive(false);
         if (panelReglas != null) panelReglas.SetActive(false);
@@ -59,6 +61,17 @@ public class ControladorMenu : MonoBehaviour
         if (sliderSonido != null) sliderSonido.value = volumenSonidoGuardado;
     }
 
+    // --- NUEVO: MÉTODO PARA CARGAR LA VIBRACIÓN AL INICIO ---
+    private void ConfigurarVibracionInicial()
+    {
+        // 1 = Activado, 0 = Desactivado. Por defecto lo dejamos en 1 (encendido).
+        int vibracionGuardada = PlayerPrefs.GetInt("VibracionActiva", 1);
+        if (toggleVibracion != null) 
+        {
+            toggleVibracion.isOn = (vibracionGuardada == 1);
+        }
+    }
+
     // --- LÓGICA DE PANELES ---
 
     public void MostrarAjustes()
@@ -66,8 +79,6 @@ public class ControladorMenu : MonoBehaviour
         if (panelAjustes != null) panelAjustes.SetActive(true);
         if (contenidoAjustes != null) contenidoAjustes.SetActive(true);
         if (panelReglas != null) panelReglas.SetActive(false);
-
-        // Ocultamos el menú principal
         SetEstadoMenuFondo(false);
     }
 
@@ -77,21 +88,12 @@ public class ControladorMenu : MonoBehaviour
         SetEstadoMenuFondo(true);
     }
 
-    // Esta es la nueva función para el botón de Reglas
     public void ConmutarReglas()
     {
         if (panelReglas == null) return;
-
-        // Invertimos el estado actual (si está encendido, se apaga; si está apagado, se enciende)
         bool mostrar = !panelReglas.activeSelf;
-        
         panelReglas.SetActive(mostrar);
-
-        // Si mostramos las reglas, ocultamos los sliders de ajustes para que no haya "texto por detrás"
-        if (contenidoAjustes != null)
-        {
-            contenidoAjustes.SetActive(!mostrar);
-        }
+        if (contenidoAjustes != null) contenidoAjustes.SetActive(!mostrar);
     }
 
     private void SetEstadoMenuFondo(bool estado)
@@ -100,6 +102,8 @@ public class ControladorMenu : MonoBehaviour
         if (panelPerfil != null) panelPerfil.SetActive(estado);
         if (botonAbrirAjustes != null) botonAbrirAjustes.SetActive(estado);
     }
+
+    // --- MÉTODOS PARA LOS SLIDERS Y TOGGLES ---
 
     public void CambiarVolumenMusica(float nuevoVolumen)
     {
@@ -114,8 +118,54 @@ public class ControladorMenu : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    // --- NUEVO: MÉTODO PARA EL BOTÓN DE VIBRACIÓN ---
+    public void CambiarVibracion(bool activar)
+    {
+        if (activar)
+        {
+            PlayerPrefs.SetInt("VibracionActiva", 1);
+            Handheld.Vibrate(); // Hace vibrar el móvil como prueba al encenderlo
+        }
+        else
+        {
+            PlayerPrefs.SetInt("VibracionActiva", 0);
+        }
+        PlayerPrefs.Save();
+    }
+
+    // --- MÉTODOS DE NAVEGACIÓN ---
     public void IniciarDueloIndividual()
     {
         SceneManager.LoadScene("MesaJuego");
+    }
+    // --- MÉTODOS DE IDIOMA Y SESIÓN ---
+
+    public void CambiarIdioma(int indiceIdioma)
+    {
+        // indice 0 = Español, indice 1 = Inglés
+        if (indiceIdioma == 0)
+        {
+            Debug.Log("Idioma cambiado a Español");
+            PlayerPrefs.SetInt("IdiomaSeleccionado", 0);
+        }
+        else if (indiceIdioma == 1)
+        {
+            Debug.Log("Idioma cambiado a Inglés");
+            PlayerPrefs.SetInt("IdiomaSeleccionado", 1);
+        }
+        PlayerPrefs.Save();
+        
+        // Aquí en el futuro puedes conectar tu sistema de traducción
+    }
+
+    public void CerrarSesion()
+    {
+        // Borramos los datos del jugador actual
+        DatosGlobales.usuarioLogueado = null;
+        PlayerPrefs.DeleteKey("NombreUsuario");
+        PlayerPrefs.Save();
+
+        // Cargamos la pantalla de inicio de sesión (Asegúrate de que el nombre coincida con tu escena)
+        SceneManager.LoadScene("PantallaLogin"); 
     }
 }
