@@ -3,9 +3,14 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using System; 
+using Random = UnityEngine.Random; // <--- AÑADE ESTA LÍNEA AQUÍ
 
 public class ControladorMesa : MonoBehaviour
 {
+    [Header("Conexión al Servidor")]
+    public ConexionAPI conexionAPI; // el puente para hablar con spring boot
+
     [Header("Configuración de Baraja Real")]
     public List<DatosCarta> baseDeDatosCartas; 
     public Sprite imagenReverso; 
@@ -26,11 +31,11 @@ public class ControladorMesa : MonoBehaviour
     public Transform zonaVisibilidad;
     public Transform zonaDescarte;
     
-    // --- OPTIMIZACIÓN: Tamaños unificados en caché ---
+    // guardamos las medidas fijas para no consumir memoria
     private readonly Vector2 tamanoCartaReal = new Vector2(220, 320);
     private readonly Vector2 tamanoCartaDescarte = new Vector2(120, 180);
 
-    // --- OPTIMIZACIÓN: Caché de tiempos de espera para evitar Garbage Collection ---
+    // preparamos los tiempos de espera una sola vez para que el movil no de tirones
     private WaitForSeconds esperaCorta = new WaitForSeconds(1.0f);
     private WaitForSeconds esperaMedia = new WaitForSeconds(1.5f);
     private WaitForSeconds esperaLarga = new WaitForSeconds(2.0f);
@@ -70,13 +75,30 @@ public class ControladorMesa : MonoBehaviour
 
     private int quienCantoCovo = 0; 
 
+    // variable para saber si estamos jugando online o contra la maquina
+    private bool esModoMultijugador = false; 
+
     void Start()
     {
+        // buscamos nuestro nombre en la mochila de memoria
         if (DatosGlobales.usuarioLogueado != null)
+        {
             textoBienvenida.text = "Hola, " + DatosGlobales.usuarioLogueado.nombre_usuario;
+        }
         else
+        {
             textoBienvenida.text = "Modo Pruebas";
+        }
 
+        // comprobamos si hemos entrado a una sala online
+        if (DatosGlobales.partidaActual != null && DatosGlobales.partidaActual.modo_juego == "Multijugador")
+        {
+            esModoMultijugador = true;
+            // empezamos a preguntar al servidor cada 2 segundos
+            InvokeRepeating("ComprobarTurnoServidor", 0f, 2f);
+        }
+
+        // apagamos paneles que no hacen falta al empezar
         if (panelPreguntaPoder != null) panelPreguntaPoder.SetActive(false);
         if (panelResultadoFinal != null) panelResultadoFinal.SetActive(false); 
         if (botonTerminar != null) botonTerminar.SetActive(false); 
@@ -84,9 +106,42 @@ public class ControladorMesa : MonoBehaviour
         PrepararNuevaRonda();
     }
 
+    // funcion nueva para el walkie-talkie con la base de datos
+    void ComprobarTurnoServidor()
+    {
+        if (conexionAPI == null || DatosGlobales.partidaActual == null) return;
+
+        long idPartidaActual = DatosGlobales.partidaActual.id_partida;
+
+        conexionAPI.ObtenerEstadoPartida(idPartidaActual, (partida) => {
+            
+            // actualizamos la mochila con lo ultimo que nos dice la bd
+            DatosGlobales.partidaActual = partida;
+
+            if (partida.turnoActualId == DatosGlobales.usuarioLogueado.id_usuario)
+            {
+                esTurnoDelJugador = true;
+                if (textoTurno != null) {
+                    textoTurno.text = "¡Es tu turno, " + DatosGlobales.usuarioLogueado.nombre_usuario + "!";
+                    textoTurno.color = Color.green;
+                }
+            }
+            else
+            {
+                esTurnoDelJugador = false;
+                if (textoTurno != null) {
+                    textoTurno.text = "Esperando al rival...";
+                    textoTurno.color = Color.white;
+                }
+            }
+        });
+    }
+
     void PrepararNuevaRonda()
     {
-        esTurnoDelJugador = (Random.Range(0, 2) == 0);
+        // decidimos quien empieza (en online lo decide el servidor despues)
+        if (!esModoMultijugador) esTurnoDelJugador = (Random.Range(0, 2) == 0);
+        
         jugadorPierdeProximoTurno = false; 
         turnosCompletos = 0; 
         quienCantoCovo = 0;
@@ -98,6 +153,7 @@ public class ControladorMesa : MonoBehaviour
         memoriaRival.Clear();
         for (int i = 0; i < 4; i++) memoriaRival.Add(null);
 
+        // si nos quedamos sin cartas creamos mazo nuevo
         if (mazo.Count < 10)
         {
             CrearMazo();
@@ -110,7 +166,7 @@ public class ControladorMesa : MonoBehaviour
     void CrearMazo()
     {
         mazo.Clear();
-        mazo.AddRange(baseDeDatosCartas); // Optimización de bucle foreach
+        mazo.AddRange(baseDeDatosCartas); 
     }
 
     void BarajarMazo()
@@ -209,10 +265,15 @@ public class ControladorMesa : MonoBehaviour
     private void ComenzarTurnos()
     {
         faseVistazoInicial = false;
-        if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "¡Empiezas tú! Tu Turno" : "¡Empieza el Rival! Turno del Rival...";
-        if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
+        
+        // si es online, esperamos al servidor, si no, lo decidimos aqui
+        if (!esModoMultijugador)
+        {
+            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "Empiezas! Tu Turno" : "Empieza el Rival! Turno del Rival...";
+            if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
 
-        if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
+            if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
+        }
     }
 
     IEnumerator EfectoAparicion(Transform cartaTransform)
@@ -240,7 +301,7 @@ public class ControladorMesa : MonoBehaviour
             RectTransform rectCarta = nuevaCarta.GetComponent<RectTransform>();
             rectCarta.anchoredPosition = Vector2.zero;
             rectCarta.localScale = Vector3.one;
-            rectCarta.sizeDelta = tamanoCartaReal; // OPTIMIZADO
+            rectCarta.sizeDelta = tamanoCartaReal; 
             
             Carta scriptCarta = nuevaCarta.GetComponent<Carta>();
             scriptCarta.ConfigurarCarta(cartaRobada, imagenReverso);
@@ -249,66 +310,88 @@ public class ControladorMesa : MonoBehaviour
         }
     }
 
-    public void CambiarTurno()
+public void CambiarTurno()
     {
+        // 1. Si la partida ha terminado, nadie más mueve
         if (partidaTerminada) return; 
 
-        esTurnoDelJugador = !esTurnoDelJugador;
-        if (esTurnoDelJugador) turnosCompletos++;
-
-        if (esTurnoDelJugador && jugadorPierdeProximoTurno)
+        if (esModoMultijugador)
         {
-            jugadorPierdeProximoTurno = false;
-            esTurnoDelJugador = false; 
+            // 2. MODO ONLINE: Bloqueamos nuestra pantalla inmediatamente
+            esTurnoDelJugador = false;
+            
+            // 3. Avisamos al servidor para que cambie la ID en la base de datos
+            if (conexionAPI != null) 
+            {
+                conexionAPI.PasarTurnoServidor();
+            }
+            
+            // Actualizamos el texto para no confundir al jugador
+            if (textoTurno != null) textoTurno.text = "Enviando jugada...";
         }
-        
-        if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "¡Tu Turno!" : "Turno del Rival...";
-        if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
+        else
+        {
+            // 4. MODO MÁQUINA: Tu lógica de la IA de siempre
+            esTurnoDelJugador = !esTurnoDelJugador;
+            if (esTurnoDelJugador) turnosCompletos++;
 
-        if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
+            if (esTurnoDelJugador && jugadorPierdeProximoTurno)
+            {
+                jugadorPierdeProximoTurno = false;
+                esTurnoDelJugador = false; 
+            }
+            
+            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "Tu Turno!" : "Turno del Rival...";
+            if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
+
+            if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
+        }
     }
 
     public void RobarAlCentro()
     {
-        // --- CHIVATOS PARA EL MAZO ---
-        Debug.Log(">>> MAZO PULSADO <<<");
-
-        if (!esTurnoDelJugador) { Debug.Log("Fallo Mazo: No es tu turno."); return; }
-        if (partidaTerminada) { Debug.Log("Fallo Mazo: La partida ya ha terminado."); return; }
-        if (faseVistazoInicial) { Debug.Log("Fallo Mazo: Aún estás en la fase de memorizar tus 2 cartas."); return; }
-        if (cantidadCartasCovoAElegir > 0) { Debug.Log("Fallo Mazo: Tienes cartas de Covo pendientes."); return; }
-        
-        if (cartaEnElCentro != null) { Debug.Log("Fallo Mazo: Ya hay una carta en el centro."); return; }
-        if (mazo.Count == 0) { Debug.Log("Fallo Mazo: El mazo está vacío."); return; }
-        if (esperandoPoderRevelar || esperandoPoderRival || esperandoPoder10_Paso1 || esperandoPoder10_Paso2) { Debug.Log("Fallo Mazo: Esperando a resolver un poder mágico."); return; }
-
-        Debug.Log("Todo correcto. ¡Robando carta al centro!");
-        // -----------------------------
+        if (!esTurnoDelJugador) return;
+        if (partidaTerminada) return;
+        if (faseVistazoInicial) return;
+        if (cantidadCartasCovoAElegir > 0) return;
+        if (cartaEnElCentro != null) return;
+        if (mazo.Count == 0) return;
+        if (esperandoPoderRevelar || esperandoPoderRival || esperandoPoder10_Paso1 || esperandoPoder10_Paso2) return;
 
         EjecutarRoboAlCentro();
     }
 
-    private void EjecutarRoboAlCentro()
+private void EjecutarRoboAlCentro()
+{
+    DatosCarta cartaRobada = mazo[0];
+    mazo.RemoveAt(0);
+
+    cartaEnElCentro = Instantiate(prefabCarta, zonaVisibilidad, false);
+    cartaVinoDelDescarte = false;
+
+    RectTransform rectCarta = cartaEnElCentro.GetComponent<RectTransform>();
+    rectCarta.anchorMin = new Vector2(0.5f, 0.5f);
+    rectCarta.anchorMax = new Vector2(0.5f, 0.5f);
+    rectCarta.pivot = new Vector2(0.5f, 0.5f);
+    rectCarta.anchoredPosition = Vector2.zero;
+    rectCarta.localScale = Vector3.one;
+    rectCarta.sizeDelta = tamanoCartaReal;
+
+    Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
+    scriptCarta.ConfigurarCarta(cartaRobada, imagenReverso);
+
+    // SOLO el jugador que roba puede verla
+    if (esTurnoDelJugador)
     {
-        DatosCarta cartaRobada = mazo[0];
-        mazo.RemoveAt(0);
-        cartaEnElCentro = Instantiate(prefabCarta, zonaVisibilidad, false);
-        cartaVinoDelDescarte = false; 
-
-        RectTransform rectCarta = cartaEnElCentro.GetComponent<RectTransform>();
-        rectCarta.anchorMin = new Vector2(0.5f, 0.5f);
-        rectCarta.anchorMax = new Vector2(0.5f, 0.5f);
-        rectCarta.pivot = new Vector2(0.5f, 0.5f);
-        rectCarta.anchoredPosition = Vector2.zero;
-        rectCarta.localScale = Vector3.one;
-        rectCarta.sizeDelta = tamanoCartaReal; // OPTIMIZADO
-        
-        Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
-        scriptCarta.ConfigurarCarta(cartaRobada, imagenReverso);
-        scriptCarta.IniciarGiro(esTurnoDelJugador); 
-
-        StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
+        scriptCarta.IniciarGiro(true);
     }
+    else
+    {
+        scriptCarta.IniciarGiro(false);
+    }
+
+    StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
+}
 
     private void DetenerTemporizador()
     {
@@ -327,34 +410,21 @@ public class ControladorMesa : MonoBehaviour
         if (cartaDestacada != null) cartaDestacada.localScale = Vector3.one;
     }
 
-IEnumerator MostrarErrorPenalizacion()
+    IEnumerator MostrarErrorPenalizacion()
     {
-        // 1. Avisamos del error en pantalla
         if (textoTurno != null) textoTurno.text = "¡Fallo! Pierdes el turno";
-        
-        // 2. Hacemos una pausa para que dé tiempo a leerlo
         yield return esperaMedia;
-        
-        // 3. Pasamos el turno
-        if (!partidaTerminada)
-        {
-            CambiarTurno(); 
-        }
+        if (!partidaTerminada) CambiarTurno(); 
     }
-public void AlPulsarCartaDeMano(Carta cartaTocada)
+
+    public void AlPulsarCartaDeMano(Carta cartaTocada)
     {
-        // 1. PRIORIDAD: Si la partida terminó, solo permitimos girar cartas para verlas
         if (partidaTerminada) 
         {
-            if (cartaTocada.transform.parent == zonaJugador)
-            {
-                cartaTocada.IniciarGiro(true);
-            }
+            if (cartaTocada.transform.parent == zonaJugador) cartaTocada.IniciarGiro(true);
             return; 
         }
 
-        // 2. PRIORIDAD: Comprobar si estamos esperando la resolución de un PODER MÁGICO
-        // Esto evita que al tocar una carta para espiarla, el juego crea que es un error de emparejamiento.
         if (esperandoPoder10_Paso1)
         {
             if (cartaTocada.transform.parent == zonaJugador)
@@ -417,7 +487,6 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
             return; 
         }
 
-        // 3. PRIORIDAD: Fases especiales (Vistazo inicial o Covo)
         if (cantidadCartasCovoAElegir > 0)
         {
             if (cartaTocada.transform.parent == zonaJugador)
@@ -451,7 +520,6 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
             return; 
         }
 
-        // 4. LÓGICA DE JUEGO: Emparejar carta de la mano con el descarte (Fuera de turno o en turno)
         if (cartaEnElCentro == null && cartaTocada.transform.parent == zonaJugador && zonaDescarte.childCount > 0)
         {
             Carta topeDescarte = zonaDescarte.GetChild(zonaDescarte.childCount - 1).GetComponent<Carta>();
@@ -464,7 +532,6 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
                     if (indicesVisiblesJugador[i] > indiceTirada) indicesVisiblesJugador[i]--;
                 }
 
-                // Usamos la nueva función refactorizada
                 MoverCartaAlDescarte(cartaTocada);
                 
                 if (esTurnoDelJugador) CambiarTurno(); 
@@ -473,16 +540,14 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
             }
             else
             {
-                // Solo penalizamos si NO estamos en una fase de poder o vistazo
                 StartCoroutine(MostrarErrorPenalizacion());
                 return; 
             }
         }
 
-        // 5. RESTRICCIÓN DE TURNO: A partir de aquí solo si es tu turno real
+        // bloqueo de seguridad para no hacer trampas en online
         if (!esTurnoDelJugador) return;
 
-        // Robar del descarte
         if (cartaEnElCentro == null && cartaTocada.transform.parent == zonaDescarte)
         {
             if (cartaTocada.transform.GetSiblingIndex() == zonaDescarte.childCount - 1)
@@ -496,12 +561,10 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
             }
         }
 
-        // Cambiar carta del centro por una de la mano
         if (cartaEnElCentro != null && cartaTocada.transform.parent == zonaJugador)
         {
             int indiceMano = cartaTocada.transform.GetSiblingIndex();
             
-            // Usamos la nueva función refactorizada para la carta de la mano
             MoverCartaAlDescarte(cartaTocada);
 
             cartaEnElCentro.transform.SetParent(zonaJugador, false);
@@ -517,21 +580,15 @@ public void AlPulsarCartaDeMano(Carta cartaTocada)
             CambiarTurno(); 
         }
     }
-public void DescartarCartaDelCentro()
+
+    public void DescartarCartaDelCentro()
     {
-        // --- CHIVATOS PARA LA CONSOLA ---
-        Debug.Log(">>> BOTÓN DESCARTAR PULSADO <<<");
-
-        if (!esTurnoDelJugador) { Debug.Log("Fallo: No es tu turno."); return; }
-        if (partidaTerminada) { Debug.Log("Fallo: La partida terminó."); return; }
-        if (faseVistazoInicial) { Debug.Log("Fallo: Estás en Vistazo Inicial."); return; }
-        if (cantidadCartasCovoAElegir > 0) { Debug.Log("Fallo: Tienes cartas Covo pendientes."); return; }
-        
-        if (cartaEnElCentro == null) { Debug.Log("Fallo: El juego cree que NO hay carta robada."); return; }
-        if (cartaVinoDelDescarte) { Debug.Log("Fallo: Robaste del descarte, no puedes volver a tirarla."); return; }
-
-        Debug.Log("Todo correcto. ¡La carta se va al descarte!");
-        // --------------------------------
+        if (!esTurnoDelJugador) return;
+        if (partidaTerminada) return;
+        if (faseVistazoInicial) return;
+        if (cantidadCartasCovoAElegir > 0) return;
+        if (cartaEnElCentro == null) return;
+        if (cartaVinoDelDescarte) return;
 
         Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
         
@@ -553,12 +610,8 @@ public void DescartarCartaDelCentro()
             poderConPanel = true;
         }
 
-        // --- CÓDIGO OPTIMIZADO ---
-        // Usamos la función auxiliar para mover, girar y encajar la carta de golpe
         MoverCartaAlDescarte(scriptCarta);
-        
         cartaEnElCentro = null;
-        // -------------------------
 
         if (poderConPanel)
         {
@@ -615,15 +668,14 @@ public void DescartarCartaDelCentro()
     IEnumerator TerminarVistazoInicial()
     {
         yield return esperaLarga; 
-
         foreach (Carta c in cartasVistas) c.IniciarGiro(false); 
-        
         cartasVistas.Clear();
         ComenzarTurnos();
     }
 
     IEnumerator JugarTurnoRival()
     {
+        // la inteligencia artificial de la maquina sigue intacta aqui
         yield return esperaCorta; 
 
         if (turnosCompletos >= turnosMinimosParaCovo)
@@ -670,7 +722,7 @@ public void DescartarCartaDelCentro()
                 rectRivalTirada.pivot = new Vector2(0.5f, 0.5f);
                 rectRivalTirada.anchoredPosition = Vector2.zero;
                 rectRivalTirada.localScale = Vector3.one;
-                rectRivalTirada.sizeDelta = tamanoCartaDescarte; // OPTIMIZADO
+                rectRivalTirada.sizeDelta = tamanoCartaDescarte; 
 
                 StartCoroutine(EfectoAparicion(cartaDeSuMano));
 
@@ -702,7 +754,7 @@ public void DescartarCartaDelCentro()
                 rectCarta.pivot = new Vector2(0.5f, 0.5f);
                 rectCarta.anchoredPosition = Vector2.zero;
                 rectCarta.localScale = Vector3.one;
-                rectCarta.sizeDelta = tamanoCartaReal; // OPTIMIZADO
+                rectCarta.sizeDelta = tamanoCartaReal; 
 
                 StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
                 roboDelDescarte = true;
@@ -752,13 +804,13 @@ public void DescartarCartaDelCentro()
                 rectRivalTirada.pivot = new Vector2(0.5f, 0.5f);
                 rectRivalTirada.anchoredPosition = Vector2.zero;
                 rectRivalTirada.localScale = Vector3.one;
-                rectRivalTirada.sizeDelta = tamanoCartaDescarte; // OPTIMIZADO
+                rectRivalTirada.sizeDelta = tamanoCartaDescarte; 
 
                 StartCoroutine(EfectoAparicion(cartaDeSuMano));
 
                 cartaEnElCentro.transform.SetParent(zonaRival, false);
                 cartaEnElCentro.transform.SetSiblingIndex(indiceParaCambiar);
-                cartaEnElCentro.GetComponent<RectTransform>().sizeDelta = tamanoCartaReal; // OPTIMIZADO
+                cartaEnElCentro.GetComponent<RectTransform>().sizeDelta = tamanoCartaReal; 
                 
                 bool debeEstarOculta = !indicesVisiblesRival.Contains(indiceParaCambiar);
                 cartaEnElCentro.GetComponent<Carta>().IniciarGiro(!debeEstarOculta); 
@@ -780,7 +832,7 @@ public void DescartarCartaDelCentro()
                 rectRivalDescarte.pivot = new Vector2(0.5f, 0.5f);
                 rectRivalDescarte.anchoredPosition = Vector2.zero;
                 rectRivalDescarte.localScale = Vector3.one;
-                rectRivalDescarte.sizeDelta = tamanoCartaDescarte; // OPTIMIZADO
+                rectRivalDescarte.sizeDelta = tamanoCartaDescarte; 
                 
                 cartaEnElCentro.GetComponent<Carta>().IniciarGiro(true); 
                 StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
@@ -866,27 +918,49 @@ public void DescartarCartaDelCentro()
         esTurnoDelJugador = false;
         
         if (botonTerminar != null) botonTerminar.SetActive(false);
-        if (textoTurno != null) textoTurno.text = "¡FIN DE LA RONDA!";
+        StartCoroutine(RevelarMesaPocoAPoco());
+    }
 
-        if (panelResultadoFinal != null) panelResultadoFinal.SetActive(true);
+    private IEnumerator RevelarMesaPocoAPoco()
+    {
+        if (textoTurno != null) textoTurno.text = "¡FIN DE LA RONDA! Revelando cartas...";
 
-        int puntosJugador = 0;
-        int puntosRival = 0;
+        if (cartaEnElCentro != null)
+        {
+            MoverCartaAlDescarte(cartaEnElCentro.GetComponent<Carta>());
+            cartaEnElCentro = null;
+            yield return esperaCorta;
+        }
+
+        int puntosTotalesJugador = 0;
+        int puntosTotalesRival = 0;
 
         foreach (Transform hijo in zonaJugador)
         {
             Carta scriptCarta = hijo.GetComponent<Carta>();
             scriptCarta.IniciarGiro(true); 
-            puntosJugador += scriptCarta.datos.valorPuntos; 
+            puntosTotalesJugador += scriptCarta.datos.valorPuntos;
+            yield return new WaitForSeconds(0.25f); 
         }
+
+        yield return esperaMedia;
 
         foreach (Transform hijo in zonaRival)
         {
             Carta scriptCarta = hijo.GetComponent<Carta>();
             scriptCarta.IniciarGiro(true); 
-            puntosRival += scriptCarta.datos.valorPuntos;
+            puntosTotalesRival += scriptCarta.datos.valorPuntos;
+            yield return new WaitForSeconds(0.25f);
         }
 
+        yield return esperaCorta;
+
+        if (panelResultadoFinal != null) panelResultadoFinal.SetActive(true);
+        ProcesarPuntuacionFinal(puntosTotalesJugador, puntosTotalesRival);
+    }
+
+    private void ProcesarPuntuacionFinal(int puntosJugador, int puntosRival)
+    {
         TextMeshProUGUI textoBotonSiguiente = botonSiguienteRonda != null ? botonSiguienteRonda.GetComponentInChildren<TextMeshProUGUI>() : null;
 
         if (textoResultado != null)
@@ -896,13 +970,13 @@ public void DescartarCartaDelCentro()
                 covosJugador++;
                 ultimoGanador = 1;
                 
-                string textoGane = "¡HAS GANADO!\n";
-                if (quienCantoCovo == 2) textoGane += "<size=30>(El Rival cantó Covo y le quitaste la victoria)</size>\n";
-                else if (puntosJugador == puntosRival) textoGane += "<size=30>(¡Empate! Pero tú te llevas la victoria por cantar Covo)</size>\n";
+                string textoGane = "HAS GANADO!\n";
+                if (quienCantoCovo == 2) textoGane += "<size=30>(El Rival dijo Covo y le quitaste la victoria)</size>\n";
+                else if (puntosJugador == puntosRival) textoGane += "<size=30>(Empate! Pero tú te llevas la victoria por decir Covo)</size>\n";
 
                 if (covosJugador >= 4)
                 {
-                    textoResultado.text = textoGane + "¡ERES EL CAMPEÓN DEFINITIVO!\nHas alcanzado tu 4º Covo.";
+                    textoResultado.text = textoGane + "ERES EL GANADOR DEFINITIVO!\nHas alcanzado tu 4º Covo.";
                     textoResultado.color = Color.cyan;
                     if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Volver a Jugar";
                 }
@@ -918,19 +992,19 @@ public void DescartarCartaDelCentro()
                 covosRival++;
                 ultimoGanador = 2;
 
-                string textoPierdo = "¡EL RIVAL GANA!\n";
-                if (quienCantoCovo == 1) textoPierdo += "<size=30>(Cantaste Covo y te salió mal la jugada)</size>\n";
-                else if (puntosJugador == puntosRival) textoPierdo += "<size=30>(¡Empate! Pero el Rival se lleva la victoria por cantar Covo)</size>\n";
+                string textoPierdo = "EL RIVAL GANA!\n";
+                if (quienCantoCovo == 1) textoPierdo += "<size=30>(Cantaste Covo y te salio mal la jugada)</size>\n";
+                else if (puntosJugador == puntosRival) textoPierdo += "<size=30>(Empate! Pero el Rival se lleva la victoria por cantar Covo)</size>\n";
 
                 if (covosRival >= 4)
                 {
-                    textoResultado.text = textoPierdo + "¡EL RIVAL GANA LA PARTIDA!\nHa alcanzado su 4º Covo.";
+                    textoResultado.text = textoPierdo + "EL RIVAL GANA LA PARTIDA!\nHa alcanzado su 4º Covo.";
                     textoResultado.color = Color.red;
                     if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Volver a Jugar";
                 }
                 else
                 {
-                    textoResultado.text = textoPierdo + "Puntos: " + puntosJugador + " | Rival: " + puntosRival + "\nCovos rival: " + covosRival;
+                    textoResultado.text = textoPierdo + "Puntos: " + puntosJugador + "| Rival: " + puntosRival + "\nCovos rival: " + covosRival;
                     textoResultado.color = Color.red;
                     if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Siguiente Ronda";
                 }
@@ -938,9 +1012,9 @@ public void DescartarCartaDelCentro()
             else 
             {
                 ultimoGanador = 0;
-                string textoEmpate = "¡EMPATE TÉCNICO!\n";
+                string textoEmpate = "EMPATE TECNICO!\n";
 
-                textoResultado.text = textoEmpate + "Puntos: " + puntosJugador + " | Rival: " + puntosRival;
+                textoResultado.text = textoEmpate + "Puntos: " + puntosJugador + "| Rival: " + puntosRival;
                 textoResultado.color = Color.yellow;
                 if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Siguiente Ronda";
             }
@@ -984,12 +1058,12 @@ public void DescartarCartaDelCentro()
     {
         carta.transform.SetParent(zonaDescarte, false);
         carta.IniciarGiro(true); 
-        
+    
         RectTransform rect = carta.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = Vector2.zero; // La clave para que vaya al centro
+        rect.anchoredPosition = Vector2.zero; 
         rect.localScale = Vector3.one;
         rect.sizeDelta = tamanoCartaDescarte; 
 

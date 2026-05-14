@@ -9,11 +9,14 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
-    path: Assets/Scenes/EscenaLogin.unity
+    path: Assets/Scenes/PantallaLogin.unity
     guid: dc73622b680e96d49bfb99605df7d666
   - enabled: 1
     path: Assets/Scenes/MesaJuego.unity
     guid: 0d0a2de6285889842a455b12d34f376b
+  - enabled: 1
+    path: Assets/Scenes/MenuPrincipal.unity
+    guid: 1c11602bf4c395743b26b57e9e411894
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: a1dc3e6175659ce4db626d2388cc6019, type: 2}
     com.unity.localization.settings: {fileID: 11400000, guid: 6414394cc9ed9b448ab4afd2fb9f9206, type: 2}

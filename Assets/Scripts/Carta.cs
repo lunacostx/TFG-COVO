@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-// Este script controla el comportamiento visual de cada carta individual
+// script que controla como se ve y que hace cada carta en la mesa
 public class Carta : MonoBehaviour, IPointerClickHandler
 {
     [Header("Datos de la Carta")]
@@ -13,17 +13,18 @@ public class Carta : MonoBehaviour, IPointerClickHandler
     public Image imagenReverso;
 
     [Header("Objeto para Ocultar (Reverso)")]
-    // --- OPTIMIZACIÓN: Caché del objeto ocultador para evitar búsquedas repetidas ---
+    // guardamos la tapa de la carta para no buscarla todo el rato
     [SerializeField] private GameObject objetoOcultador;
 
-    // Referencia al controlador de la mesa para notificar los clics
+    // guardamos al jefe de la mesa para avisarle cuando tocamos la carta
     private ControladorMesa controlador;
 
     private void Awake()
     {
-        // Buscamos el controlador en la escena al inicio
+        // buscamos al controlador en la escena al nacer
         controlador = FindObjectOfType<ControladorMesa>();
 
+        // si se nos olvido arrastrar la tapa en unity la buscamos nosotras
         if (objetoOcultador == null)
         {
             Transform tOcultador = transform.Find("Ocultador");
@@ -33,18 +34,14 @@ public class Carta : MonoBehaviour, IPointerClickHandler
             }
         }
 
-        // --- SOLUCIÓN: Movemos esto al Awake ---
-        // Así nace boca abajo desde el milisegundo 1, y luego la mesa puede girarla si quiere
+        // obligamos a la carta a nacer boca abajo para evitar trampas
         if (objetoOcultador != null)
         {
             objetoOcultador.SetActive(true);
         }
     }
 
-    // ⚠️ BORRA LA FUNCIÓN Start() POR COMPLETO. Ya no la necesitamos aquí.
-
-
-    // Función para configurar la carta con sus datos y el reverso de la baraja
+    // le pasamos la informacion y los dibujos a la carta
     public void ConfigurarCarta(DatosCarta nuevosDatos, Sprite spriteReversoBaraja)
     {
         datos = nuevosDatos;
@@ -60,7 +57,7 @@ public class Carta : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    // Función para mostrar u ocultar la cara de la carta activando/desactivando el reverso
+    // quitamos o ponemos la tapa para ver la carta o esconderla
     public void IniciarGiro(bool mostrarCara)
     {
         if (objetoOcultador != null)
@@ -69,13 +66,12 @@ public class Carta : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    // --- MANTENEMOS LA FUNCIONALIDAD: Implementamos la interfaz para detectar clics en la carta ---
-    // Esto es más eficiente que usar un componente 'Button' extra.
+    // detecta el clic del raton sin tener que usar el componente boton
     public void OnPointerClick(PointerEventData eventData)
     {
+        // si el juego no ha terminado le chivamos al controlador que nos han tocado
         if (controlador != null && !controlador.partidaTerminada)
         {
-            // Notificamos al controlador de la mesa que se ha pulsado esta carta
             controlador.AlPulsarCartaDeMano(this);
         }
     }

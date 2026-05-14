@@ -1,11 +1,8 @@
-using UnityEngine;
-
 public static class DatosGlobales
 {
-    // Aquí guardaremos al usuario que ha iniciado sesión
-    public static DatosUsuario usuarioLogueado;
+    // Esto ya lo tenías
+    public static DatosUsuario usuarioLogueado; 
 
-    // Puedes añadir más cosas aquí en el futuro, como:
-    // public static int partidaActualId;
-    // public static string nombreRival;
+    // --- ESTA ES LA LÍNEA NUEVA QUE FALTA ---
+    public static DatosPartida partidaActual; 
 }

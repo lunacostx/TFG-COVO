@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
+// script que controla la pantalla de presentacion al abrir el juego
 public class ControladorInicio : MonoBehaviour
 {
     [SerializeField] private GameObject pantallaPortada;
@@ -9,20 +10,20 @@ public class ControladorInicio : MonoBehaviour
 
     private void Start()
     {
-        // 1. Nos aseguramos de que el estado inicial sea el correcto
+        // encendemos la portada y apagamos el menu para empezar limpios
         pantallaPortada.SetActive(true);
         menuPrincipal.SetActive(false);
 
-        // 2. Iniciamos la cuenta atrás optimizada
+        // arrancamos el temporizador en segundo plano
         StartCoroutine(TransicionAlMenu());
     }
 
     private IEnumerator TransicionAlMenu()
     {
-        // Congelamos esta función durante los segundos indicados
+        // pausamos el codigo los segundos que hayamos puesto en unity
         yield return new WaitForSeconds(tiempoDeEspera);
 
-        // 3. Hacemos el cambiazo
+        // escondemos la portada y mostramos el menu principal
         pantallaPortada.SetActive(false);
         menuPrincipal.SetActive(true);
     }
