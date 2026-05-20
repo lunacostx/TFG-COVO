@@ -107,7 +107,8 @@ public class ControladorMesa : MonoBehaviour
     }
 
     // funcion nueva para el walkie-talkie con la base de datos
-    void ComprobarTurnoServidor()
+// funcion nueva para el walkie-talkie con la base de datos
+void ComprobarTurnoServidor()
     {
         if (conexionAPI == null || DatosGlobales.partidaActual == null) return;
 
@@ -115,25 +116,40 @@ public class ControladorMesa : MonoBehaviour
 
         conexionAPI.ObtenerEstadoPartida(idPartidaActual, (partida) => {
             
-            // actualizamos la mochila con lo ultimo que nos dice la bd
-            DatosGlobales.partidaActual = partida;
+            // 1. Comprobamos de quién es el turno según el servidor
+            bool esMiTurnoAhora = (partida.turnoActualId == DatosGlobales.usuarioLogueado.id_usuario);
 
-            if (partida.turnoActualId == DatosGlobales.usuarioLogueado.id_usuario)
+            // 2. OPTIMIZACIÓN: Solo actualizamos la interfaz y el sonido si hay un cambio real de turno
+            if (esTurnoDelJugador != esMiTurnoAhora)
             {
-                esTurnoDelJugador = true;
-                if (textoTurno != null) {
-                    textoTurno.text = "¡Es tu turno, " + DatosGlobales.usuarioLogueado.nombre_usuario + "!";
-                    textoTurno.color = Color.green;
+                esTurnoDelJugador = esMiTurnoAhora;
+
+                if (esTurnoDelJugador)
+                {
+                    // ¡El turno acaba de pasar del rival a ti! Significa que el rival acaba de jugar.
+                    // Aquí disparamos el sonido de soltar carta exactamente una vez.
+                    if (ControladorSonido.instancia != null) 
+                    {
+                        ControladorSonido.instancia.SonidoSoltar();
+                    }
+
+                    if (textoTurno != null) {
+                        textoTurno.text = "¡Es tu turno, " + DatosGlobales.usuarioLogueado.nombre_usuario + "!";
+                        textoTurno.color = Color.green;
+                    }
+                }
+                else
+                {
+                    // El turno acaba de pasar de ti al rival
+                    if (textoTurno != null) {
+                        textoTurno.text = "Esperando al rival...";
+                        textoTurno.color = Color.white;
+                    }
                 }
             }
-            else
-            {
-                esTurnoDelJugador = false;
-                if (textoTurno != null) {
-                    textoTurno.text = "Esperando al rival...";
-                    textoTurno.color = Color.white;
-                }
-            }
+
+            // 3. Actualizamos la mochila con lo ultimo que nos dice la bd
+            DatosGlobales.partidaActual = partida;
         });
     }
 
@@ -217,6 +233,7 @@ public class ControladorMesa : MonoBehaviour
                 memoriaRival[idx] = cartaDestapadaRival.datos;
 
                 StartCoroutine(DestacarPosicion(cartaDestapadaRival.transform));
+                
             }
             MemorizarRivalInicial();
             IniciarVistazoJugador();
@@ -308,6 +325,7 @@ public class ControladorMesa : MonoBehaviour
 
             StartCoroutine(EfectoAparicion(nuevaCarta.transform));
         }
+        if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
     }
 
 public void CambiarTurno()
@@ -725,6 +743,7 @@ private void EjecutarRoboAlCentro()
                 rectRivalTirada.sizeDelta = tamanoCartaDescarte; 
 
                 StartCoroutine(EfectoAparicion(cartaDeSuMano));
+                if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
 
                 if (indicesVisiblesRival.Contains(indiceParaEmparejar)) indicesVisiblesRival.Remove(indiceParaEmparejar);
                 for (int j = 0; j < indicesVisiblesRival.Count; j++) {
@@ -797,7 +816,8 @@ private void EjecutarRoboAlCentro()
                 Transform cartaDeSuMano = zonaRival.GetChild(indiceParaCambiar);
 
                 cartaDeSuMano.SetParent(zonaDescarte, false);
-                cartaDeSuMano.GetComponent<Carta>().IniciarGiro(true); 
+                cartaDeSuMano.GetComponent<Carta>().IniciarGiro(true);
+                if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
                 RectTransform rectRivalTirada = cartaDeSuMano.GetComponent<RectTransform>();
                 rectRivalTirada.anchorMin = new Vector2(0.5f, 0.5f);
                 rectRivalTirada.anchorMax = new Vector2(0.5f, 0.5f);
@@ -807,6 +827,7 @@ private void EjecutarRoboAlCentro()
                 rectRivalTirada.sizeDelta = tamanoCartaDescarte; 
 
                 StartCoroutine(EfectoAparicion(cartaDeSuMano));
+                if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
 
                 cartaEnElCentro.transform.SetParent(zonaRival, false);
                 cartaEnElCentro.transform.SetSiblingIndex(indiceParaCambiar);
@@ -816,6 +837,7 @@ private void EjecutarRoboAlCentro()
                 cartaEnElCentro.GetComponent<Carta>().IniciarGiro(!debeEstarOculta); 
 
                 StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
+                if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
 
                 memoriaRival[indiceParaCambiar] = cartaEnElCentro.GetComponent<Carta>().datos;
                 StartCoroutine(DestacarPosicion(cartaEnElCentro.transform));
@@ -834,7 +856,8 @@ private void EjecutarRoboAlCentro()
                 rectRivalDescarte.localScale = Vector3.one;
                 rectRivalDescarte.sizeDelta = tamanoCartaDescarte; 
                 
-                cartaEnElCentro.GetComponent<Carta>().IniciarGiro(true); 
+                cartaEnElCentro.GetComponent<Carta>().IniciarGiro(true);
+                if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
                 StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
 
                 cartaEnElCentro = null;
@@ -850,6 +873,7 @@ private void EjecutarRoboAlCentro()
                     if (indiceParaEspiar != -1)
                     {
                         Carta cartaEspiada = zonaRival.GetChild(indiceParaEspiar).GetComponent<Carta>();
+                        if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
                         memoriaRival[indiceParaEspiar] = cartaEspiada.datos;
                         
                         StartCoroutine(DestacarPosicion(cartaEspiada.transform));
@@ -938,7 +962,8 @@ private void EjecutarRoboAlCentro()
         foreach (Transform hijo in zonaJugador)
         {
             Carta scriptCarta = hijo.GetComponent<Carta>();
-            scriptCarta.IniciarGiro(true); 
+            scriptCarta.IniciarGiro(true);
+            if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
             puntosTotalesJugador += scriptCarta.datos.valorPuntos;
             yield return new WaitForSeconds(0.25f); 
         }
@@ -948,7 +973,8 @@ private void EjecutarRoboAlCentro()
         foreach (Transform hijo in zonaRival)
         {
             Carta scriptCarta = hijo.GetComponent<Carta>();
-            scriptCarta.IniciarGiro(true); 
+            scriptCarta.IniciarGiro(true);
+            if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
             puntosTotalesRival += scriptCarta.datos.valorPuntos;
             yield return new WaitForSeconds(0.25f);
         }
@@ -1068,5 +1094,7 @@ private void EjecutarRoboAlCentro()
         rect.sizeDelta = tamanoCartaDescarte; 
 
         StartCoroutine(EfectoAparicion(carta.transform));
+
+        if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
     }
 }
