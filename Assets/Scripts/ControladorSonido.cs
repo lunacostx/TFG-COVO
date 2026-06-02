@@ -18,6 +18,10 @@ public class ControladorSonido : MonoBehaviour
     public Slider deslizadorEfectos;
     public Toggle interruptorSilencio;
 
+    [Header("Vibración")]
+    public Toggle interruptorVibracion;
+    public bool vibracionActivada = true;
+
     private void Awake()
     {
         if (instancia == null)
@@ -71,6 +75,26 @@ public class ControladorSonido : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    public void AlternarVibracion()
+    {
+        vibracionActivada = interruptorVibracion != null && interruptorVibracion.isOn;
+        PlayerPrefs.SetInt("Vibracion", vibracionActivada ? 1 : 0);
+        PlayerPrefs.Save();
+
+        // Pequeña vibración de prueba al activarlo en el menú
+        if (vibracionActivada) Vibrar(); 
+    }
+
+    public void Vibrar()
+        {
+            if (vibracionActivada)
+            {
+    #if UNITY_ANDROID || UNITY_IOS
+                Handheld.Vibrate();
+    #endif
+            }
+        }
+
     private void CargarAjustes()
     {
         if (PlayerPrefs.HasKey("VolumenMusica"))
@@ -93,6 +117,12 @@ public class ControladorSonido : MonoBehaviour
             if (reproductorMusica != null) reproductorMusica.mute = silenciadoGuardado;
             if (reproductorEfectos != null) reproductorEfectos.mute = silenciadoGuardado;
             if (interruptorSilencio != null) interruptorSilencio.isOn = silenciadoGuardado;
+        }
+
+        if (PlayerPrefs.HasKey("Vibracion"))
+        {
+            vibracionActivada = PlayerPrefs.GetInt("Vibracion") == 1;
+            if (interruptorVibracion != null) interruptorVibracion.isOn = vibracionActivada;
         }
     }
 

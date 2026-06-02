@@ -108,9 +108,10 @@ public class ControladorMenu : MonoBehaviour
 
     public void OcultarAjustes()
     {
-        // cerramos los ajustes y devolvemos la pantalla a la normalidad
-        if (panelAjustes != null) panelAjustes.SetActive(false);
-        SetEstadoMenuFondo(true);
+    // Solo apaga el panel de ajustes, no hace absolutamente nada más
+    panelAjustes.SetActive(false);
+    menuPrincipal.SetActive(true);
+    botonAbrirAjustes.SetActive(true);
     }
 
     public void ConmutarReglas()
@@ -250,7 +251,6 @@ public class ControladorMenu : MonoBehaviour
         if (activar)
         {
             PlayerPrefs.SetInt("VibracionActiva", 1);
-            Handheld.Vibrate(); 
         }
         else PlayerPrefs.SetInt("VibracionActiva", 0);
         

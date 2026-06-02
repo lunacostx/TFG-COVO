@@ -4,12 +4,18 @@ using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
 using System; 
-using Random = UnityEngine.Random; // <--- AÑADE ESTA LÍNEA AQUÍ
+using Random = UnityEngine.Random; 
 
 public class ControladorMesa : MonoBehaviour
 {
+    // --- SISTEMA DE IDIOMAS ---
+    public enum OpcionIdioma { Espanol, Ingles }
+    
+    [Header("Configuración de Idioma")]
+    public OpcionIdioma idiomaActual = OpcionIdioma.Espanol;
+
     [Header("Conexión al Servidor")]
-    public ConexionAPI conexionAPI; // el puente para hablar con spring boot
+    public ConexionAPI conexionAPI; 
 
     [Header("Configuración de Baraja Real")]
     public List<DatosCarta> baseDeDatosCartas; 
@@ -31,11 +37,9 @@ public class ControladorMesa : MonoBehaviour
     public Transform zonaVisibilidad;
     public Transform zonaDescarte;
     
-    // guardamos las medidas fijas para no consumir memoria
     private readonly Vector2 tamanoCartaReal = new Vector2(220, 320);
     private readonly Vector2 tamanoCartaDescarte = new Vector2(120, 180);
 
-    // preparamos los tiempos de espera una sola vez para que el movil no de tirones
     private WaitForSeconds esperaCorta = new WaitForSeconds(1.0f);
     private WaitForSeconds esperaMedia = new WaitForSeconds(1.5f);
     private WaitForSeconds esperaLarga = new WaitForSeconds(2.0f);
@@ -72,33 +76,35 @@ public class ControladorMesa : MonoBehaviour
     private List<DatosCarta> memoriaRival = new List<DatosCarta>();
     private int turnosCompletos = 0;
     private int turnosMinimosParaCovo = 5;
-
     private int quienCantoCovo = 0; 
-
-    // variable para saber si estamos jugando online o contra la maquina
     private bool esModoMultijugador = false; 
+
+    // --- DICCIONARIO DE TEXTOS ---
+    private Dictionary<string, string> diccEspanol = new Dictionary<string, string>();
+    private Dictionary<string, string> diccIngles = new Dictionary<string, string>();
+
+    void Awake()
+    {
+        CargarDiccionarios();
+    }
 
     void Start()
     {
-        // buscamos nuestro nombre en la mochila de memoria
         if (DatosGlobales.usuarioLogueado != null)
         {
-            textoBienvenida.text = "Hola, " + DatosGlobales.usuarioLogueado.nombre_usuario;
+            textoBienvenida.text = string.Format(ObtenerTexto("HOLA"), DatosGlobales.usuarioLogueado.nombre_usuario);
         }
         else
         {
-            textoBienvenida.text = "Modo Pruebas";
+            textoBienvenida.text = ObtenerTexto("MODO_PRUEBAS");
         }
 
-        // comprobamos si hemos entrado a una sala online
         if (DatosGlobales.partidaActual != null && DatosGlobales.partidaActual.modo_juego == "Multijugador")
         {
             esModoMultijugador = true;
-            // empezamos a preguntar al servidor cada 2 segundos
             InvokeRepeating("ComprobarTurnoServidor", 0f, 2f);
         }
 
-        // apagamos paneles que no hacen falta al empezar
         if (panelPreguntaPoder != null) panelPreguntaPoder.SetActive(false);
         if (panelResultadoFinal != null) panelResultadoFinal.SetActive(false); 
         if (botonTerminar != null) botonTerminar.SetActive(false); 
@@ -106,56 +112,97 @@ public class ControladorMesa : MonoBehaviour
         PrepararNuevaRonda();
     }
 
-    // funcion nueva para el walkie-talkie con la base de datos
-// funcion nueva para el walkie-talkie con la base de datos
-void ComprobarTurnoServidor()
+    // --- SISTEMA DE TRADUCCIÓN ---
+    private void CargarDiccionarios()
+    {
+        // Español
+        diccEspanol.Add("HOLA", "Hola, {0}");
+        diccEspanol.Add("MODO_PRUEBAS", "Modo Pruebas");
+        diccEspanol.Add("TU_TURNO", "¡Tu turno!");
+        diccEspanol.Add("ESPERANDO", "Esperando...");
+        diccEspanol.Add("ELIGE_CARTAS", "Destapa {0} carta(s)");
+        diccEspanol.Add("MEMORIZA", "Memoriza {0} carta(s)");
+        diccEspanol.Add("TURNO_RIVAL", "Turno rival...");
+        diccEspanol.Add("ENVIANDO", "Enviando...");
+        diccEspanol.Add("FALLO", "¡Fallo! Pierdes turno");
+        diccEspanol.Add("COVO_RIVAL", "¡Rival dice COVO!");
+        diccEspanol.Add("FIN_RONDA", "Fin de ronda...");
+        diccEspanol.Add("GANAS_RONDA", "¡RONDA GANADA!");
+        diccEspanol.Add("GANAS_PARTIDA", "¡VICTORIA TOTAL!");
+        diccEspanol.Add("PIERDES_RONDA", "RONDA PERDIDA");
+        diccEspanol.Add("PIERDES_PARTIDA", "¡DERROTA!");
+        diccEspanol.Add("EMPATE", "EMPATE");
+        diccEspanol.Add("RESUMEN", "Puntos: {0}  Rival: {1}\nCovos tuyos: {2}");
+        diccEspanol.Add("RESUMEN_RIVAL", "Puntos: {0}  Rival: {1}\nCovos rival: {2}");
+        diccEspanol.Add("RESUMEN_EMPATE", "Puntos: {0}  Rival: {1}");
+        diccEspanol.Add("BTN_SALIR", "Salir");
+        diccEspanol.Add("BTN_SIGUIENTE", "Siguiente");
+
+        // Inglés
+        diccIngles.Add("HOLA", "Hello, {0}");
+        diccIngles.Add("MODO_PRUEBAS", "Test Mode");
+        diccIngles.Add("TU_TURNO", "Your turn!");
+        diccIngles.Add("ESPERANDO", "Waiting...");
+        diccIngles.Add("ELIGE_CARTAS", "Reveal {0} card(s)");
+        diccIngles.Add("MEMORIZA", "Memorize {0} card(s)");
+        diccIngles.Add("TURNO_RIVAL", "Rival's turn...");
+        diccIngles.Add("ENVIANDO", "Sending...");
+        diccIngles.Add("FALLO", "Miss! Turn lost");
+        diccIngles.Add("COVO_RIVAL", "Rival calls COVO!");
+        diccIngles.Add("FIN_RONDA", "Round over...");
+        diccIngles.Add("GANAS_RONDA", "ROUND WON!");
+        diccIngles.Add("GANAS_PARTIDA", "TOTAL VICTORY!");
+        diccIngles.Add("PIERDES_RONDA", "ROUND LOST");
+        diccIngles.Add("PIERDES_PARTIDA", "DEFEAT!");
+        diccIngles.Add("EMPATE", "DRAW");
+        diccIngles.Add("RESUMEN", "You: {0} | Rival: {1}\nYour Covos: {2}");
+        diccIngles.Add("RESUMEN_RIVAL", "You: {0} | Rival: {1}\nRival Covos: {2}");
+        diccIngles.Add("RESUMEN_EMPATE", "You: {0} | Rival: {1}");
+        diccIngles.Add("BTN_SALIR", "Exit");
+        diccIngles.Add("BTN_SIGUIENTE", "Next");
+    }
+
+    private string ObtenerTexto(string clave)
+    {
+        Dictionary<string, string> diccionarioUsado = (idiomaActual == OpcionIdioma.Espanol) ? diccEspanol : diccIngles;
+        if (diccionarioUsado.ContainsKey(clave)) return diccionarioUsado[clave];
+        return clave; 
+    }
+
+    // --- LÓGICA DE JUEGO ---
+    void ComprobarTurnoServidor()
     {
         if (conexionAPI == null || DatosGlobales.partidaActual == null) return;
 
-        long idPartidaActual = DatosGlobales.partidaActual.id_partida;
-
-        conexionAPI.ObtenerEstadoPartida(idPartidaActual, (partida) => {
-            
-            // 1. Comprobamos de quién es el turno según el servidor
+        conexionAPI.ObtenerEstadoPartida(DatosGlobales.partidaActual.id_partida, (partida) => {
             bool esMiTurnoAhora = (partida.turnoActualId == DatosGlobales.usuarioLogueado.id_usuario);
 
-            // 2. OPTIMIZACIÓN: Solo actualizamos la interfaz y el sonido si hay un cambio real de turno
             if (esTurnoDelJugador != esMiTurnoAhora)
             {
                 esTurnoDelJugador = esMiTurnoAhora;
 
                 if (esTurnoDelJugador)
                 {
-                    // ¡El turno acaba de pasar del rival a ti! Significa que el rival acaba de jugar.
-                    // Aquí disparamos el sonido de soltar carta exactamente una vez.
-                    if (ControladorSonido.instancia != null) 
-                    {
-                        ControladorSonido.instancia.SonidoSoltar();
-                    }
-
+                    if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoSoltar();
                     if (textoTurno != null) {
-                        textoTurno.text = "¡Es tu turno, " + DatosGlobales.usuarioLogueado.nombre_usuario + "!";
+                        textoTurno.text = ObtenerTexto("TU_TURNO");
                         textoTurno.color = Color.green;
                     }
                 }
                 else
                 {
-                    // El turno acaba de pasar de ti al rival
                     if (textoTurno != null) {
-                        textoTurno.text = "Esperando al rival...";
+                        textoTurno.text = ObtenerTexto("ESPERANDO");
                         textoTurno.color = Color.white;
                     }
                 }
             }
-
-            // 3. Actualizamos la mochila con lo ultimo que nos dice la bd
             DatosGlobales.partidaActual = partida;
         });
     }
 
     void PrepararNuevaRonda()
     {
-        // decidimos quien empieza (en online lo decide el servidor despues)
         if (!esModoMultijugador) esTurnoDelJugador = (Random.Range(0, 2) == 0);
         
         jugadorPierdeProximoTurno = false; 
@@ -169,7 +216,6 @@ void ComprobarTurnoServidor()
         memoriaRival.Clear();
         for (int i = 0; i < 4; i++) memoriaRival.Add(null);
 
-        // si nos quedamos sin cartas creamos mazo nuevo
         if (mazo.Count < 10)
         {
             CrearMazo();
@@ -213,7 +259,7 @@ void ComprobarTurnoServidor()
         {
             cantidadCartasCovoAElegir = Mathf.Min(covosJugador, 3);
             faseVistazoInicial = false;
-            if (textoTurno != null) textoTurno.text = "¡Ganaste! Elige " + cantidadCartasCovoAElegir + " carta(s) para destapar";
+            if (textoTurno != null) textoTurno.text = string.Format(ObtenerTexto("ELIGE_CARTAS"), cantidadCartasCovoAElegir);
             MemorizarRivalInicial();
         }
         else if (ultimoGanador == 2 && covosRival > 0) 
@@ -233,7 +279,6 @@ void ComprobarTurnoServidor()
                 memoriaRival[idx] = cartaDestapadaRival.datos;
 
                 StartCoroutine(DestacarPosicion(cartaDestapadaRival.transform));
-                
             }
             MemorizarRivalInicial();
             IniciarVistazoJugador();
@@ -271,7 +316,7 @@ void ComprobarTurnoServidor()
         {
             faseVistazoInicial = true;
             cartasVistas.Clear();
-            if (textoTurno != null) textoTurno.text = "Memoriza hasta " + maxVistazosJugador + " cartas tuyas";
+            if (textoTurno != null) textoTurno.text = string.Format(ObtenerTexto("MEMORIZA"), maxVistazosJugador);
         }
         else
         {
@@ -283,10 +328,9 @@ void ComprobarTurnoServidor()
     {
         faseVistazoInicial = false;
         
-        // si es online, esperamos al servidor, si no, lo decidimos aqui
         if (!esModoMultijugador)
         {
-            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "Empiezas! Tu Turno" : "Empieza el Rival! Turno del Rival...";
+            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? ObtenerTexto("TU_TURNO") : ObtenerTexto("TURNO_RIVAL");
             if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
 
             if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
@@ -328,28 +372,18 @@ void ComprobarTurnoServidor()
         if (ControladorSonido.instancia != null) ControladorSonido.instancia.SonidoLevantar();
     }
 
-public void CambiarTurno()
+    public void CambiarTurno()
     {
-        // 1. Si la partida ha terminado, nadie más mueve
         if (partidaTerminada) return; 
 
         if (esModoMultijugador)
         {
-            // 2. MODO ONLINE: Bloqueamos nuestra pantalla inmediatamente
             esTurnoDelJugador = false;
-            
-            // 3. Avisamos al servidor para que cambie la ID en la base de datos
-            if (conexionAPI != null) 
-            {
-                conexionAPI.PasarTurnoServidor();
-            }
-            
-            // Actualizamos el texto para no confundir al jugador
-            if (textoTurno != null) textoTurno.text = "Enviando jugada...";
+            if (conexionAPI != null) conexionAPI.PasarTurnoServidor();
+            if (textoTurno != null) textoTurno.text = ObtenerTexto("ENVIANDO");
         }
         else
         {
-            // 4. MODO MÁQUINA: Tu lógica de la IA de siempre
             esTurnoDelJugador = !esTurnoDelJugador;
             if (esTurnoDelJugador) turnosCompletos++;
 
@@ -359,7 +393,7 @@ public void CambiarTurno()
                 esTurnoDelJugador = false; 
             }
             
-            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? "Tu Turno!" : "Turno del Rival...";
+            if (textoTurno != null) textoTurno.text = esTurnoDelJugador ? ObtenerTexto("TU_TURNO") : ObtenerTexto("TURNO_RIVAL");
             if (botonTerminar != null) botonTerminar.SetActive(esTurnoDelJugador && turnosCompletos >= turnosMinimosParaCovo);
 
             if (!esTurnoDelJugador) StartCoroutine(JugarTurnoRival());
@@ -368,48 +402,32 @@ public void CambiarTurno()
 
     public void RobarAlCentro()
     {
-        if (!esTurnoDelJugador) return;
-        if (partidaTerminada) return;
-        if (faseVistazoInicial) return;
-        if (cantidadCartasCovoAElegir > 0) return;
-        if (cartaEnElCentro != null) return;
-        if (mazo.Count == 0) return;
-        if (esperandoPoderRevelar || esperandoPoderRival || esperandoPoder10_Paso1 || esperandoPoder10_Paso2) return;
-
+        if (!esTurnoDelJugador || partidaTerminada || faseVistazoInicial || cantidadCartasCovoAElegir > 0 || cartaEnElCentro != null || mazo.Count == 0 || esperandoPoderRevelar || esperandoPoderRival || esperandoPoder10_Paso1 || esperandoPoder10_Paso2) return;
         EjecutarRoboAlCentro();
     }
 
-private void EjecutarRoboAlCentro()
-{
-    DatosCarta cartaRobada = mazo[0];
-    mazo.RemoveAt(0);
-
-    cartaEnElCentro = Instantiate(prefabCarta, zonaVisibilidad, false);
-    cartaVinoDelDescarte = false;
-
-    RectTransform rectCarta = cartaEnElCentro.GetComponent<RectTransform>();
-    rectCarta.anchorMin = new Vector2(0.5f, 0.5f);
-    rectCarta.anchorMax = new Vector2(0.5f, 0.5f);
-    rectCarta.pivot = new Vector2(0.5f, 0.5f);
-    rectCarta.anchoredPosition = Vector2.zero;
-    rectCarta.localScale = Vector3.one;
-    rectCarta.sizeDelta = tamanoCartaReal;
-
-    Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
-    scriptCarta.ConfigurarCarta(cartaRobada, imagenReverso);
-
-    // SOLO el jugador que roba puede verla
-    if (esTurnoDelJugador)
+    private void EjecutarRoboAlCentro()
     {
-        scriptCarta.IniciarGiro(true);
-    }
-    else
-    {
-        scriptCarta.IniciarGiro(false);
-    }
+        DatosCarta cartaRobada = mazo[0];
+        mazo.RemoveAt(0);
 
-    StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
-}
+        cartaEnElCentro = Instantiate(prefabCarta, zonaVisibilidad, false);
+        cartaVinoDelDescarte = false;
+
+        RectTransform rectCarta = cartaEnElCentro.GetComponent<RectTransform>();
+        rectCarta.anchorMin = new Vector2(0.5f, 0.5f);
+        rectCarta.anchorMax = new Vector2(0.5f, 0.5f);
+        rectCarta.pivot = new Vector2(0.5f, 0.5f);
+        rectCarta.anchoredPosition = Vector2.zero;
+        rectCarta.localScale = Vector3.one;
+        rectCarta.sizeDelta = tamanoCartaReal;
+
+        Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
+        scriptCarta.ConfigurarCarta(cartaRobada, imagenReverso);
+
+        scriptCarta.IniciarGiro(esTurnoDelJugador);
+        StartCoroutine(EfectoAparicion(cartaEnElCentro.transform));
+    }
 
     private void DetenerTemporizador()
     {
@@ -430,7 +448,10 @@ private void EjecutarRoboAlCentro()
 
     IEnumerator MostrarErrorPenalizacion()
     {
-        if (textoTurno != null) textoTurno.text = "¡Fallo! Pierdes el turno";
+        if (textoTurno != null) {
+            textoTurno.text = ObtenerTexto("FALLO");
+            textoTurno.color = Color.red;
+        }
         yield return esperaMedia;
         if (!partidaTerminada) CambiarTurno(); 
     }
@@ -563,7 +584,6 @@ private void EjecutarRoboAlCentro()
             }
         }
 
-        // bloqueo de seguridad para no hacer trampas en online
         if (!esTurnoDelJugador) return;
 
         if (cartaEnElCentro == null && cartaTocada.transform.parent == zonaDescarte)
@@ -601,12 +621,7 @@ private void EjecutarRoboAlCentro()
 
     public void DescartarCartaDelCentro()
     {
-        if (!esTurnoDelJugador) return;
-        if (partidaTerminada) return;
-        if (faseVistazoInicial) return;
-        if (cantidadCartasCovoAElegir > 0) return;
-        if (cartaEnElCentro == null) return;
-        if (cartaVinoDelDescarte) return;
+        if (!esTurnoDelJugador || partidaTerminada || faseVistazoInicial || cantidadCartasCovoAElegir > 0 || cartaEnElCentro == null || cartaVinoDelDescarte) return;
 
         Carta scriptCarta = cartaEnElCentro.GetComponent<Carta>();
         
@@ -693,7 +708,6 @@ private void EjecutarRoboAlCentro()
 
     IEnumerator JugarTurnoRival()
     {
-        // la inteligencia artificial de la maquina sigue intacta aqui
         yield return esperaCorta; 
 
         if (turnosCompletos >= turnosMinimosParaCovo)
@@ -706,7 +720,10 @@ private void EjecutarRoboAlCentro()
 
             if (puntosEstimados <= 5)
             {
-                if (textoTurno != null) textoTurno.text = "¡EL RIVAL HA CANTADO COVO!";
+                if (textoTurno != null) {
+                    textoTurno.text = ObtenerTexto("COVO_RIVAL");
+                    textoTurno.color = Color.red;
+                }
                 yield return esperaMedia; 
                 quienCantoCovo = 2; 
                 EjecutarFinalRonda();
@@ -947,7 +964,7 @@ private void EjecutarRoboAlCentro()
 
     private IEnumerator RevelarMesaPocoAPoco()
     {
-        if (textoTurno != null) textoTurno.text = "¡FIN DE LA RONDA! Revelando cartas...";
+        if (textoTurno != null) textoTurno.text = ObtenerTexto("FIN_RONDA");
 
         if (cartaEnElCentro != null)
         {
@@ -989,28 +1006,25 @@ private void EjecutarRoboAlCentro()
     {
         TextMeshProUGUI textoBotonSiguiente = botonSiguienteRonda != null ? botonSiguienteRonda.GetComponentInChildren<TextMeshProUGUI>() : null;
 
+        // Limpiamos los textos largos y los sustituimos por el formato simple del diccionario
         if (textoResultado != null)
         {
             if (puntosJugador < puntosRival || (puntosJugador == puntosRival && quienCantoCovo == 1))
             {
                 covosJugador++;
                 ultimoGanador = 1;
-                
-                string textoGane = "HAS GANADO!\n";
-                if (quienCantoCovo == 2) textoGane += "<size=30>(El Rival dijo Covo y le quitaste la victoria)</size>\n";
-                else if (puntosJugador == puntosRival) textoGane += "<size=30>(Empate! Pero tú te llevas la victoria por decir Covo)</size>\n";
 
                 if (covosJugador >= 4)
                 {
-                    textoResultado.text = textoGane + "ERES EL GANADOR DEFINITIVO!\nHas alcanzado tu 4º Covo.";
+                    textoResultado.text = ObtenerTexto("GANAS_PARTIDA");
                     textoResultado.color = Color.cyan;
-                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Volver a Jugar";
+                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = ObtenerTexto("BTN_SALIR");
                 }
                 else
                 {
-                    textoResultado.text = textoGane + "Puntos: " + puntosJugador + " | Rival: " + puntosRival + "\nCovos tuyos: " + covosJugador;
+                    textoResultado.text = ObtenerTexto("GANAS_RONDA") + "\n" + string.Format(ObtenerTexto("RESUMEN"), puntosJugador, puntosRival, covosJugador);
                     textoResultado.color = Color.green;
-                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Siguiente Ronda";
+                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = ObtenerTexto("BTN_SIGUIENTE");
                 }
             }
             else if (puntosJugador > puntosRival || (puntosJugador == puntosRival && quienCantoCovo == 2))
@@ -1018,31 +1032,25 @@ private void EjecutarRoboAlCentro()
                 covosRival++;
                 ultimoGanador = 2;
 
-                string textoPierdo = "EL RIVAL GANA!\n";
-                if (quienCantoCovo == 1) textoPierdo += "<size=30>(Cantaste Covo y te salio mal la jugada)</size>\n";
-                else if (puntosJugador == puntosRival) textoPierdo += "<size=30>(Empate! Pero el Rival se lleva la victoria por cantar Covo)</size>\n";
-
                 if (covosRival >= 4)
                 {
-                    textoResultado.text = textoPierdo + "EL RIVAL GANA LA PARTIDA!\nHa alcanzado su 4º Covo.";
+                    textoResultado.text = ObtenerTexto("PIERDES_PARTIDA");
                     textoResultado.color = Color.red;
-                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Volver a Jugar";
+                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = ObtenerTexto("BTN_SALIR");
                 }
                 else
                 {
-                    textoResultado.text = textoPierdo + "Puntos: " + puntosJugador + "| Rival: " + puntosRival + "\nCovos rival: " + covosRival;
+                    textoResultado.text = ObtenerTexto("PIERDES_RONDA") + "\n" + string.Format(ObtenerTexto("RESUMEN_RIVAL"), puntosJugador, puntosRival, covosRival);
                     textoResultado.color = Color.red;
-                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Siguiente Ronda";
+                    if (textoBotonSiguiente != null) textoBotonSiguiente.text = ObtenerTexto("BTN_SIGUIENTE");
                 }
             }
             else 
             {
                 ultimoGanador = 0;
-                string textoEmpate = "EMPATE TECNICO!\n";
-
-                textoResultado.text = textoEmpate + "Puntos: " + puntosJugador + "| Rival: " + puntosRival;
+                textoResultado.text = ObtenerTexto("EMPATE") + "\n" + string.Format(ObtenerTexto("RESUMEN_EMPATE"), puntosJugador, puntosRival);
                 textoResultado.color = Color.yellow;
-                if (textoBotonSiguiente != null) textoBotonSiguiente.text = "Siguiente Ronda";
+                if (textoBotonSiguiente != null) textoBotonSiguiente.text = ObtenerTexto("BTN_SIGUIENTE");
             }
         }
 

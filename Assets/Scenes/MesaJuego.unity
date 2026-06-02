@@ -1023,7 +1023,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.0348, y: 547}
+  m_AnchoredPosition: {x: -1.0348, y: -400}
   m_SizeDelta: {x: 312.089, y: 157.1619}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &345639026
@@ -1056,15 +1056,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: fcb7ded017d7b9f48ac380d89837c424, type: 2}
-  m_sharedMaterial: {fileID: -1973826355066626657, guid: fcb7ded017d7b9f48ac380d89837c424, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 1b0f0e6a6f7aaa84fb00ebe5e1383519, type: 2}
+  m_sharedMaterial: {fileID: -6854482918158613356, guid: 1b0f0e6a6f7aaa84fb00ebe5e1383519, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4279747279
-  m_fontColor: {r: 0.8113208, g: 0.76214945, b: 0.09031678, a: 1}
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1117,7 +1117,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: -20.637856, y: 52.40846, z: -16.37191, w: -136.93681}
+  m_margin: {x: 3.539116, y: -7.104374, z: -6.375618, w: -56.96646}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -1386,6 +1386,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6eb6800312e93043b3425c1f008ed71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  idiomaActual: 0
   conexionAPI: {fileID: 0}
   baseDeDatosCartas:
   - {fileID: 11400000, guid: c1fa10ad0127d1e46b93c60a3cab12f1, type: 2}
@@ -2229,7 +2230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -18.2416, y: -485}
+  m_AnchoredPosition: {x: -18.2416, y: 116}
   m_SizeDelta: {x: 434.8811, y: 100.1049}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1138932758
